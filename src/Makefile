@@ -14,7 +14,7 @@ vrp: $(OBJS)
 	g++ $(CPPFLAGS) -c $<
 
 clean:
-	rm $(OBJS)
+	rm -f $(OBJS)
 
 dist-clean: clean
 	rm $(EXENAME)

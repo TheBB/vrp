@@ -3,28 +3,46 @@
 
 using namespace std;
 
-class Customer: enable_shared_from_this<Customer>
+class Point: public enable_shared_from_this<Point>
 {
 protected:
     double x, y;
 
 public:
-    Customer(double, double);
-    double distance_to(Customer);
+    Point(double, double);
+    double distance_to(Point);
 };
 
-class Depot: public Customer
+class Customer: public Point
 {
+protected:
+    int id, duration;
+
 public:
-    Depot(double x, double y) : Customer(x, y) { }
+    Customer(int, int, double, double);
 };
 
-class Problem: enable_shared_from_this<Problem>
+typedef shared_ptr<Customer> CustomerPtr;
+
+class Depot: public Point
+{
+protected:
+    int id;
+
+public:
+    Depot(int, double, double);
+};
+
+typedef shared_ptr<Depot> DepotPtr;
+
+class Problem: public enable_shared_from_this<Problem>
 {
 private:
-    set<Customer> customers;
-    set<Depot> depots;
+    bool ready = false;
+    set<CustomerPtr> customers;
+    set<DepotPtr> depots;
 
 public:
-    Problem();
+    Problem(string);
+    bool is_ready() { return this->ready; }
 };
