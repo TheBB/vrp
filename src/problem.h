@@ -2,6 +2,9 @@
 #include <set>
 #include <vector>
 
+#ifndef __PROBLEM_H__
+#define __PROBLEM_H__
+
 using namespace std;
 
 /**
@@ -15,8 +18,12 @@ protected:
 
 public:
     Point(double, double);
+
+    // Time to get to another point, measured in minutes
     double time_to(Point);
 };
+
+typedef shared_ptr<Point> PointPtr;
 
 /**
  * Customers derive from points and have IDs and an expected service duration
@@ -63,6 +70,7 @@ public:
     Tour(DepotPtr, CustomerPtr);
 
     double duration();
+    void add_customer(CustomerPtr);
 };
 
 typedef shared_ptr<Tour> TourPtr;
@@ -72,16 +80,21 @@ typedef shared_ptr<Tour> TourPtr;
  */
 class Problem: public enable_shared_from_this<Problem>
 {
-    friend class Solution;
-
 private:
     bool ready = false;
+
+    // The daily maximal duration of a serviceman, 8 hours measured in minutes
+    int daily_cap = 8 * 60;
+
     set<CustomerPtr> customers;
     set<DepotPtr> depots;
 
 public:
     Problem(string);
     bool is_ready() { return this->ready; }
+
+    set<CustomerPtr> get_customers() const { return customers; }
+    set<DepotPtr> get_depots() const { return depots; }
 };
 
 typedef shared_ptr<Problem> ProblemPtr;
@@ -97,4 +110,9 @@ private:
 
 public:
     Solution(ProblemPtr);
+    void add_tour(TourPtr);
 };
+
+typedef shared_ptr<Solution> SolutionPtr;
+
+#endif

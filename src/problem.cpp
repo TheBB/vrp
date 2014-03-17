@@ -1,7 +1,6 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <problem.h>
 
 using namespace std;
@@ -108,7 +107,7 @@ double Tour::duration()
 {
     double duration = 0;
 
-    if (customers.size() > 0)
+    if (!customers.empty())
     {
         duration += depot->time_to(**customers.begin());
         duration += depot->time_to(**customers.end());
@@ -121,9 +120,65 @@ double Tour::duration()
 }
 
 /**
+ * Inserts a new customer at the point where the extra distance is minimized.
+ * Potentially sub-optimal but very fast.
+ */
+void Tour::add_customer(CustomerPtr customer)
+{
+    if (customers.empty())
+    {
+        customers.push_back(customer);
+        return;
+    }
+
+    vector<CustomerPtr>::iterator location;
+    double cost = -1;
+
+    for (vector<CustomerPtr>::iterator it = customers.begin();; it++)
+    {
+        double test_cost;
+
+        if (it == customers.begin())
+        {
+            test_cost = depot->time_to(*customer)
+                      + customer->time_to(**it)
+                      - depot->time_to(**it);
+        }
+        else if (it == customers.end())
+        {
+            test_cost = (*(it-1))->time_to(*customer)
+                      + customer->time_to(*depot)
+                      - (*(it-1))->time_to(*depot);
+        }
+        else
+        {
+            test_cost = (*(it-1))->time_to(*customer)
+                      + customer->time_to(**it)
+                      - (*(it-1))->time_to(**it);
+        }
+
+        if (test_cost < cost || cost < 0)
+        {
+            cost = test_cost;
+            location = it;
+        }
+
+        if (it == customers.end())
+            break;
+    }
+
+    customers.insert(location, customer);
+}
+
+/**
  * Constructs a non-solution with no tours.
  */
 Solution::Solution(ProblemPtr problem)
 {
     this->problem = problem;
+}
+
+void Solution::add_tour(TourPtr tour)
+{
+    tours.insert(tour);
 }

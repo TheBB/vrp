@@ -1,11 +1,14 @@
 CPPFLAGS = -std=c++11 -Wall -pedantic -I.
 LDFLAGS =
 LDLIBS =
-SRCS = problem.cpp main.cpp
+RM = rm -f
+SRCS = problem.cpp main.cpp assigners.cpp
 OBJS = $(subst .cpp,.o,$(SRCS))
 EXENAME = vrp
 
 all: $(EXENAME)
+
+from-scratch: dist-clean $(EXENAME)
 
 vrp: $(OBJS)
 	g++ $(LDFLAGS) -o $(EXENAME) $(OBJS) $(LDLIBS)
@@ -14,7 +17,7 @@ vrp: $(OBJS)
 	g++ $(CPPFLAGS) -c $<
 
 clean:
-	rm -f $(OBJS)
+	$(RM) $(OBJS)
 
 dist-clean: clean
-	rm $(EXENAME)
+	$(RM) $(EXENAME)
