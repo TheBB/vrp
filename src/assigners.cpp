@@ -1,3 +1,4 @@
+#include <iostream>
 #include <assigners.h>
 
 Assigner::Assigner(ProblemPtr problem)
@@ -31,7 +32,7 @@ DistanceAssigner::DistanceAssigner(ProblemPtr problem) : Assigner(problem)
         DepotPtr nearest_depot;
         double duration = -1;
 
-        for (DepotPtr depot : problem->get_depots())
+        for (auto depot : problem->get_depots())
         {
             double test_duration = depot->time_to(*customer);
             if (test_duration < duration || duration < 0)

@@ -1,9 +1,9 @@
+#ifndef __ASSIGNERS_H__
+#define __ASSIGNERS_H__
+
 #include <map>
 #include <memory>
 #include <problem.h>
-
-#ifndef __ASSIGNERS_H__
-#define __ASSIGNERS_H__
 
 using namespace std;
 

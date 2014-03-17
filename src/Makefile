@@ -2,7 +2,7 @@ CPPFLAGS = -std=c++11 -Wall -pedantic -I.
 LDFLAGS =
 LDLIBS =
 RM = rm -f
-SRCS = problem.cpp main.cpp assigners.cpp
+SRCS = problem.cpp main.cpp assigners.cpp cwsavings.cpp
 OBJS = $(subst .cpp,.o,$(SRCS))
 EXENAME = vrp
 

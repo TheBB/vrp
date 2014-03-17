@@ -1,9 +1,15 @@
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <problem.h>
 
 using namespace std;
+
+double triangle(Point first, Point middle, Point last)
+{
+    return first.time_to(middle) + middle.time_to(last) - first.time_to(last);
+}
 
 Point::Point(double x, double y)
 {
@@ -103,18 +109,37 @@ Tour::Tour(DepotPtr depot, CustomerPtr customer)
     customers.push_back(CustomerPtr(customer));
 }
 
+/**
+ * Constructs a new tour by merging two existing tours from the same depot.
+ */
+Tour::Tour(Tour left, Tour right)
+{
+    if (left.depot != right.depot)
+        throw;
+
+    auto lc = left.customers, rc = right.customers;
+
+    depot = left.depot;
+
+    customers.insert(customers.end(), lc.begin(), lc.end());
+    customers.insert(customers.end(), rc.begin(), rc.end());
+}
+
 double Tour::duration()
 {
     double duration = 0;
 
     if (!customers.empty())
     {
-        duration += depot->time_to(**customers.begin());
-        duration += depot->time_to(**customers.end());
+        duration += depot->time_to(*customers.front());
+        duration += depot->time_to(*customers.back());
     }
 
     for (vector<CustomerPtr>::size_type i = 1; i < customers.size(); i++)
         duration += customers[i-1]->time_to(*customers[i]);
+
+    for (auto customer : customers)
+        duration += customer->get_duration();
 
     return duration;
 }
@@ -139,23 +164,11 @@ void Tour::add_customer(CustomerPtr customer)
         double test_cost;
 
         if (it == customers.begin())
-        {
-            test_cost = depot->time_to(*customer)
-                      + customer->time_to(**it)
-                      - depot->time_to(**it);
-        }
+            test_cost = triangle(*depot, *customer, **it);
         else if (it == customers.end())
-        {
-            test_cost = (*(it-1))->time_to(*customer)
-                      + customer->time_to(*depot)
-                      - (*(it-1))->time_to(*depot);
-        }
+            test_cost = triangle(**(it-1), *customer, *depot);
         else
-        {
-            test_cost = (*(it-1))->time_to(*customer)
-                      + customer->time_to(**it)
-                      - (*(it-1))->time_to(**it);
-        }
+            test_cost = triangle(**(it-1), *customer, **it);
 
         if (test_cost < cost || cost < 0)
         {
@@ -170,6 +183,14 @@ void Tour::add_customer(CustomerPtr customer)
     customers.insert(location, customer);
 }
 
+void Tour::describe()
+{
+    cout << fixed << setprecision(2) << duration() << " [" << depot->get_id() << "]";
+    for (auto customer : customers)
+        cout << " > " << setw(3) << customer->get_id();
+    cout << endl;
+}
+
 /**
  * Constructs a non-solution with no tours.
  */
@@ -178,7 +199,63 @@ Solution::Solution(ProblemPtr problem)
     this->problem = problem;
 }
 
+/**
+ * Constructs a solution from a set of tours.
+ */
+Solution::Solution(ProblemPtr problem, set<TourPtr> tours)
+{
+    this->problem = problem;
+    this->tours = tours;
+}
+
 void Solution::add_tour(TourPtr tour)
 {
     tours.insert(tour);
+}
+
+void Solution::describe()
+{
+    cout << "Number of tours: " << ntours() << endl;
+    for (auto depot : problem->get_depots())
+        for (auto tour : tours_from_depot(depot))
+            tour->describe();
+}
+
+/**
+ * Checks whether:
+ * * Every customer is visited exactly once.
+ * * No tour is longer than the given limit.
+ */
+bool Solution::is_valid()
+{
+    set<CustomerPtr> visited_customers;
+
+    for (auto tour : tours)
+    {
+        if (tour->duration() > problem->get_daily_cap())
+            return false;
+
+        for (auto customer : tour->get_customers())
+        {
+            auto ret = visited_customers.insert(customer);
+            if (ret.second == false)
+                return false;
+        }
+    }
+
+    return visited_customers.size() == problem->get_customers().size();
+}
+
+/**
+ * Returns all tours starting from a given depot.
+ */
+set<TourPtr> Solution::tours_from_depot(DepotPtr depot)
+{
+    set<TourPtr> tours;
+
+    for (auto tour : this->tours)
+        if (tour->get_depot() == depot)
+            tours.insert(tour);
+
+    return tours;
 }

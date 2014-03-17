@@ -1,9 +1,9 @@
+#ifndef __PROBLEM_H__
+#define __PROBLEM_H__
+
 #include <memory>
 #include <set>
 #include <vector>
-
-#ifndef __PROBLEM_H__
-#define __PROBLEM_H__
 
 using namespace std;
 
@@ -25,6 +25,8 @@ public:
 
 typedef shared_ptr<Point> PointPtr;
 
+double triangle(Point, Point, Point);
+
 /**
  * Customers derive from points and have IDs and an expected service duration
  * in minutes.
@@ -36,6 +38,9 @@ protected:
 
 public:
     Customer(int, int, double, double);
+
+    inline int get_id() const { return id; }
+    inline int get_duration() const { return duration; }
 };
 
 typedef shared_ptr<Customer> CustomerPtr;
@@ -51,6 +56,8 @@ protected:
 
 public:
     Depot(int, double, double);
+
+    inline int get_id() const { return id; }
 };
 
 typedef shared_ptr<Depot> DepotPtr;
@@ -68,9 +75,18 @@ private:
 public:
     Tour(DepotPtr);
     Tour(DepotPtr, CustomerPtr);
+    Tour(Tour, Tour);
 
     double duration();
     void add_customer(CustomerPtr);
+
+    void describe();
+
+    inline DepotPtr get_depot() const { return depot; }
+    inline vector<CustomerPtr> get_customers() const { return customers; }
+    inline bool is_empty() const { return customers.empty(); }
+    inline CustomerPtr first() const { return customers.front(); }
+    inline CustomerPtr last() const { return customers.back(); }
 };
 
 typedef shared_ptr<Tour> TourPtr;
@@ -84,7 +100,7 @@ private:
     bool ready = false;
 
     // The daily maximal duration of a serviceman, 8 hours measured in minutes
-    int daily_cap = 8 * 60;
+    int daily_cap = 90;
 
     set<CustomerPtr> customers;
     set<DepotPtr> depots;
@@ -93,8 +109,11 @@ public:
     Problem(string);
     bool is_ready() { return this->ready; }
 
-    set<CustomerPtr> get_customers() const { return customers; }
-    set<DepotPtr> get_depots() const { return depots; }
+    inline int get_daily_cap() const { return daily_cap; }
+    inline set<CustomerPtr> get_customers() const { return customers; }
+    inline set<DepotPtr> get_depots() const { return depots; }
+    inline int ncustomers() const { return customers.size(); }
+    inline int ndepots() const { return depots.size(); }
 };
 
 typedef shared_ptr<Problem> ProblemPtr;
@@ -110,7 +129,16 @@ private:
 
 public:
     Solution(ProblemPtr);
+    Solution(ProblemPtr, set<TourPtr>);
     void add_tour(TourPtr);
+
+    void describe();
+
+    bool is_valid();
+    set<TourPtr> tours_from_depot(DepotPtr);
+
+    inline ProblemPtr get_problem() const { return problem; }
+    inline int ntours() const { return tours.size(); }
 };
 
 typedef shared_ptr<Solution> SolutionPtr;
