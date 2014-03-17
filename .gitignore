@@ -12,5 +12,8 @@
 *.la
 *.a
 
+# Vim swap files
+*.swp
+
 # Executable
 vrp
