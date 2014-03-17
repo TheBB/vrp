@@ -12,7 +12,7 @@ Point::Point(double x, double y)
     this->y = y;
 }
 
-double Point::distance_to(Point other)
+double Point::time_to(Point other)
 {
     double dx = x - other.x, dy = y - other.y;
     return sqrt(dx*dx + dy*dy);
@@ -29,10 +29,18 @@ Depot::Depot(int id, double x, double y) : Point(x, y)
     this->id = id;
 }
 
+/**
+ * Constructs a problem instance from a file according to the file format by Cordeau
+ * http://neo.lcc.uma.es/vrp/vrp-instances/description-for-files-of-cordeaus-instances/
+ *
+ * Note not all data are of interest to us, since we are solving a weaker problem.
+ * This may change in the future.
+ */
 Problem::Problem(string filename)
 {
     ifstream in(filename, ifstream::in);
 
+    // For throwing away useless information
     int temp;
 
     // Problem type: this is a MDVRP solver only!
@@ -77,4 +85,45 @@ Problem::Problem(string filename)
 
     in.close();
     this->ready = true;
+}
+
+/**
+ * Constructs an empty tour that doesn't go anywhere.
+ */
+Tour::Tour(DepotPtr depot)
+{
+    this->depot = depot;
+}
+
+/**
+ * Constructs a singleton tour that only visits one customer.
+ */
+Tour::Tour(DepotPtr depot, CustomerPtr customer)
+{
+    this->depot = depot;
+    customers.push_back(CustomerPtr(customer));
+}
+
+double Tour::duration()
+{
+    double duration = 0;
+
+    if (customers.size() > 0)
+    {
+        duration += depot->time_to(**customers.begin());
+        duration += depot->time_to(**customers.end());
+    }
+
+    for (vector<CustomerPtr>::size_type i = 1; i < customers.size(); i++)
+        duration += customers[i-1]->time_to(*customers[i]);
+
+    return duration;
+}
+
+/**
+ * Constructs a non-solution with no tours.
+ */
+Solution::Solution(ProblemPtr problem)
+{
+    this->problem = problem;
 }
