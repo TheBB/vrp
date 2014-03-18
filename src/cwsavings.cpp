@@ -4,7 +4,7 @@
 #include <cwsavings.h>
 
 /**
- * Implementation of the Clark and Wright savings algorithm
+ * Implementation of the Clarke and Wright savings algorithm
  * This function modifies an existing solution by merging tours from the same depot if this results in a net
  * cost reduction. The tours are merged in order of net reduction from highest to lowest. This is primarily
  * used to initiate the solver with a sensible first guess.
@@ -15,7 +15,8 @@ SolutionPtr cw_savings(SolutionPtr prevsol)
 
     for (auto depot : prevsol->get_problem()->get_depots())
     {
-        auto tours = prevsol->tours_from_depot(depot);
+        vector<TourPtr> tours_vec = prevsol->tours_from_depot(depot);
+        set<TourPtr> tours(tours_vec.begin(), tours_vec.end());
 
         while (true)
         {

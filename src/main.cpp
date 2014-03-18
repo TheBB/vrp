@@ -19,16 +19,21 @@ int main(int argc, char **argv)
          << problem->ncustomers() << " customers and "
          << problem->ndepots() << " depots." << endl;
 
-    DistanceAssigner assigner(problem);
-    SolutionPtr solution = assigner.make_solution();
+    // Initial solution using a naive customer->depot assignment and C-W savings to merge tours
+    SolutionPtr solution = cw_savings(DistanceAssigner(problem).make_solution());
 
-    //solution->describe();
-    //cout << (solution->is_valid() ? "Valid" : "Invalid") << endl;
+    solution->describe();
+    cout << (solution->is_valid() ? "Valid" : "Invalid") << endl;
 
-    SolutionPtr merged = cw_savings(solution);
+    MovePtr move;
+    solution->initialize_cycle();
+    int i = 0;
+    while (move = solution->get_next_move())
+    {
+        i++;
+    }
 
-    merged->describe();
-    cout << (merged->is_valid() ? "Valid" : "Invalid") << endl;
+    cout << "Total moves: " << i << endl;
 
     return 0;
 }

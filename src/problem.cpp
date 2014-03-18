@@ -205,20 +205,19 @@ Solution::Solution(ProblemPtr problem)
 Solution::Solution(ProblemPtr problem, set<TourPtr> tours)
 {
     this->problem = problem;
-    this->tours = tours;
+    this->tours.insert(this->tours.begin(), tours.begin(), tours.end());
 }
 
 void Solution::add_tour(TourPtr tour)
 {
-    tours.insert(tour);
+    tours.push_back(tour);
 }
 
 void Solution::describe()
 {
     cout << "Number of tours: " << ntours() << endl;
-    for (auto depot : problem->get_depots())
-        for (auto tour : tours_from_depot(depot))
-            tour->describe();
+    for (auto tour : tours)
+        tour->describe();
 }
 
 /**
@@ -249,13 +248,113 @@ bool Solution::is_valid()
 /**
  * Returns all tours starting from a given depot.
  */
-set<TourPtr> Solution::tours_from_depot(DepotPtr depot)
+vector<TourPtr> Solution::tours_from_depot(DepotPtr depot)
 {
-    set<TourPtr> tours;
+    vector<TourPtr> tours;
 
     for (auto tour : this->tours)
         if (tour->get_depot() == depot)
-            tours.insert(tour);
+            tours.push_back(tour);
 
     return tours;
+}
+
+/**
+ * Initializes the lambda interchange cycle.
+ *
+ * TODO: Accept a permutation argument, or generate one.
+ */
+void Solution::initialize_cycle()
+{
+    omp_init_lock(&cl_lock);
+    cl_lft = 0;
+    cl_rgt = 1;
+    cl_op = ICHG_LEFT_TO_RIGHT;
+    cl_lft_cst = 0;
+}
+
+/**
+ * Generates the next move in the cycle.
+ */
+MovePtr Solution::get_next_move()
+{
+    omp_set_lock(&cl_lock);
+
+    if (cl_lft >= tours.size() || cl_rgt >= tours.size() || tours.size() == 1)
+    {
+        omp_unset_lock(&cl_lock);
+        return MovePtr();
+    }
+
+    // Generate a move
+    if (cl_op == ICHG_LEFT_TO_RIGHT)
+        cout << "LTR: (" << cl_lft << "  -> " << cl_rgt << ") "
+             << "move " << tours[cl_lft]->get_customers()[cl_lft_cst]->get_id() << endl;
+    else if (cl_op == ICHG_RIGHT_TO_LEFT)
+        cout << "RTL: (" << cl_lft << " <-  " << cl_rgt << ") "
+             << "move " << tours[cl_rgt]->get_customers()[cl_rgt_cst]->get_id() << endl;
+    else if (cl_op == ICHG_SWAP)
+        cout << "SWP: (" << cl_lft << " <-> " << cl_rgt << ") "
+             << "move " << tours[cl_lft]->get_customers()[cl_lft_cst]->get_id()
+             << " and " << tours[cl_rgt]->get_customers()[cl_rgt_cst]->get_id() << endl;
+
+    MovePtr ret = MovePtr(new Move());
+
+    // Advance the customer pointer(s)
+    if (cl_op == ICHG_LEFT_TO_RIGHT)
+        cl_lft_cst++;
+    else if (cl_op == ICHG_RIGHT_TO_LEFT || cl_op == ICHG_SWAP)
+        cl_rgt_cst++;
+
+    if (cl_op == ICHG_SWAP && cl_rgt_cst == tours[cl_rgt]->get_customers().size())
+    {
+        cl_lft_cst++;
+        cl_rgt_cst = 0;
+    }
+
+    // If the customer pointer(s) are at the end, increment the operator and reset the customer pointer(s)
+    if (cl_op == ICHG_LEFT_TO_RIGHT && cl_lft_cst == tours[cl_lft]->get_customers().size())
+    {
+        cl_op = ICHG_RIGHT_TO_LEFT;
+        cl_rgt_cst = 0;
+    }
+    else if (cl_op == ICHG_RIGHT_TO_LEFT && cl_rgt_cst == tours[cl_rgt]->get_customers().size())
+    {
+        cl_op = ICHG_SWAP;
+        cl_lft_cst = cl_rgt_cst = 0;
+    }
+    else if (cl_op == ICHG_SWAP && cl_lft_cst == tours[cl_lft]->get_customers().size())
+    {
+        cl_op = ICHG_LEFT_TO_RIGHT;
+        cl_rgt++;
+
+        if (cl_rgt == tours.size())
+        {
+            cl_lft++;
+            cl_rgt = cl_lft+1;
+        }
+
+        cl_lft_cst = 0;
+    }
+    //else if (cl_op == ICHG_SWAP && cl_lft_cst == (*cl_lft)->get_customers().end())
+    //{
+        //cl_op = ICHG_LEFT_TO_RIGHT;
+        //cl_rgt++;
+
+        //if (cl_rgt == cl_lft)
+            //cl_rgt++;
+
+        //if (cl_rgt == tours.end())
+        //{
+            //cl_rgt = tours.begin();
+            //cl_lft++;
+        //}
+
+        //if (cl_lft != tours.end())
+            //cl_lft_cst = (*cl_lft)->get_customers().begin();
+    //}
+    
+    omp_unset_lock(&cl_lock);
+
+    return ret;
 }

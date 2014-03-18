@@ -1,5 +1,5 @@
 CPPFLAGS = -std=c++11 -Wall -pedantic -I.
-LDFLAGS =
+LDFLAGS = -fopenmp
 LDLIBS =
 RM = rm -f
 SRCS = problem.cpp main.cpp assigners.cpp cwsavings.cpp

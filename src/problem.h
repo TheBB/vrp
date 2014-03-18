@@ -4,6 +4,11 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include <omp.h>
+
+#define ICHG_LEFT_TO_RIGHT 0            // (1,0)-interchange operator
+#define ICHG_RIGHT_TO_LEFT 1            // (0,1)-interchange operator
+#define ICHG_SWAP 2                     // (1,1)-interchange operator
 
 using namespace std;
 
@@ -119,13 +124,25 @@ public:
 typedef shared_ptr<Problem> ProblemPtr;
 
 /**
+ * In the lambda-interchange strategy, a modification to a solution is represented by a Move.
+ */
+class Move: public enable_shared_from_this<Move>
+{
+};
+
+typedef shared_ptr<Move> MovePtr;
+
+/**
  * A proposed solution to a given problem is a collection of tours.
  */
 class Solution: public enable_shared_from_this<Solution>
 {
 private:
     ProblemPtr problem;
-    set<TourPtr> tours;
+    vector<TourPtr> tours;
+
+    omp_lock_t cl_lock;
+    unsigned int cl_lft, cl_rgt, cl_op, cl_lft_cst, cl_rgt_cst;
 
 public:
     Solution(ProblemPtr);
@@ -135,7 +152,10 @@ public:
     void describe();
 
     bool is_valid();
-    set<TourPtr> tours_from_depot(DepotPtr);
+    vector<TourPtr> tours_from_depot(DepotPtr);
+
+    void initialize_cycle();
+    MovePtr get_next_move();
 
     inline ProblemPtr get_problem() const { return problem; }
     inline int ntours() const { return tours.size(); }
